@@ -22,10 +22,24 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 function mixColor(a,b,t){t=clamp(t);const n=h=>parseInt(h,16);const aa=a.slice(1),bb=b.slice(1);return '#'+[0,2,4].map(i=>Math.round(n(aa.slice(i,i+2))*(1-t)+n(bb.slice(i,i+2))*t).toString(16).padStart(2,'0')).join('')}
 function lightLevel(){const t=travelSeconds%DAY_SECONDS;if(t<240)return 1;if(t<300)return 1-(t-240)/60;if(t<540)return 0;return (t-540)/60}
 function updateBiome(){const n=Math.floor(travelSeconds/BIOME_SECONDS);if(n!==stageNumber-1){stageNumber=n+1;biomeIndex=n%BIOMES.length;stageFlash=150;el('biomeLabel').textContent=BIOMES[biomeIndex].name}}
-function drawWeather(g,b){if(b.weather==='clear')return;g.save();g.globalAlpha=b.weather==='rain'?.35:.65;g.strokeStyle=b.weather==='rain'?'#bce4ef':'#f5faff';g.fillStyle='#f5faff';for(let i=0;i<45;i++){const x=((i*137+37+clock*(b.weather==='rain'?-2.3:-.45))%840+840)%840-20;const y=((i*83+clock*(b.weather==='rain'?4.3:1.1))%550+550)%550;if(b.weather==='rain'){g.beginPath();g.moveTo(x,y);g.lineTo(x-7,y+17);g.stroke()}else{g.beginPath();g.arc(x,y,1.8+(i%3)*.45,0,Math.PI*2);g.fill()}}g.restore()}
+// Weather is visual-only; select climate-appropriate effects deterministically per stage.
+const WEATHER_OPTIONS={
+ '原初の地':[['clear',5],['rain',2],['cloud',3]],
+ '草原':[['clear',5],['cloud',3],['rain',2]],
+ '森林':[['clear',3],['cloud',3],['rain',3],['fog',1]],
+ '砂漠':[['clear',8],['cloud',1],['rain',.15],['dust',.85]],
+ 'ツンドラ':[['clear',3],['cloud',3],['snow',3],['fog',1]],
+ 'タイガ':[['clear',3],['cloud',3],['snow',3],['rain',1]],
+ 'サバンナ':[['clear',6],['cloud',2],['rain',2]],
+ '熱帯雨林':[['clear',1],['cloud',2],['rain',6],['fog',1]],
+ '湿地':[['clear',2],['cloud',2],['rain',4],['fog',2]]
+};
+function currentWeather(){const opts=WEATHER_OPTIONS[BIOMES[biomeIndex].name];const total=opts.reduce((a,o)=>a+o[1],0);let r=((stageNumber*73.17+Math.floor(travelSeconds/32)*19.31)%1000)/1000*total;for(const [type,weight] of opts){r-=weight;if(r<0)return type}return 'clear'}
+function drawWeather(g,b){const w=currentWeather();if(w==='clear')return;g.save();if(w==='cloud'){g.globalAlpha=.13;g.fillStyle='#e4e8e7';for(let i=0;i<5;i++){const x=((i*203+clock*.08)%1000)-100;g.beginPath();g.ellipse(x,58+(i%3)*37,85,19,0,0,Math.PI*2);g.fill()}}else if(w==='fog'){g.globalAlpha=.13;g.fillStyle='#e5eff1';for(let i=0;i<4;i++)g.fillRect(0,175+i*70,800,30)}else if(w==='dust'){g.globalAlpha=.28;g.fillStyle='#f0d09c';for(let i=0;i<55;i++){const x=((i*137+clock*1.7)%840+840)%840-20,y=(i*83+clock*.15)%510;g.fillRect(x,y,3,2)}}else{g.globalAlpha=w==='rain'?.35:.65;g.strokeStyle=w==='rain'?'#bce4ef':'#f5faff';g.fillStyle='#f5faff';for(let i=0;i<45;i++){const x=((i*137+37+clock*(w==='rain'?-2.3:-.45))%840+840)%840-20;const y=((i*83+clock*(w==='rain'?4.3:1.1))%550+550)%550;if(w==='rain'){g.beginPath();g.moveTo(x,y);g.lineTo(x-7,y+17);g.stroke()}else{g.beginPath();g.arc(x,y,1.8+(i%3)*.45,0,Math.PI*2);g.fill()}}}g.restore()}
 function drawLandscape(g){const b=BIOMES[biomeIndex],l=lightLevel(),sky=mixColor('#101d35',b.sky,l),far=mixColor('#1a2a3b',b.far,l),ground=mixColor('#243b38',b.ground,l);g.fillStyle=sky;g.fillRect(0,0,800,950);
-// Sun and moon move slowly across the sky.
-const t=travelSeconds%DAY_SECONDS;g.save();g.globalAlpha=l*.85;g.fillStyle='#ffe7a1';g.beginPath();g.arc(85+(t/600)*630,110,31,0,Math.PI*2);g.fill();g.restore();g.save();g.globalAlpha=(1-l)*.85;g.fillStyle='#e6efff';g.beginPath();g.arc(690-(t/600)*590,115,22,0,Math.PI*2);g.fill();g.restore();
+// Fixed celestial positions: time of day is expressed through light and sky color.
+g.save();g.globalAlpha=Math.max(0,(l-.15)/.85)*.85;g.fillStyle='#ffe7a1';g.beginPath();g.arc(700,305,31,0,Math.PI*2);g.fill();g.restore();
+g.save();g.globalAlpha=Math.max(0,(.85-l)/.85)*.85;g.fillStyle='#e6efff';g.beginPath();g.arc(700,305,22,0,Math.PI*2);g.fill();g.restore();
 if(l<.5){g.save();g.globalAlpha=(.5-l)*1.5;g.fillStyle='#f2f5ff';for(let i=0;i<35;i++){const x=(i*137+29)%800,y=(i*67+17)%260;g.fillRect(x,y,2,2)}g.restore()}
 g.fillStyle=far;for(let i=0;i<15;i++){const x=i*91-(clock*.35%91);g.beginPath();g.moveTo(x,G);g.lineTo(x+49,G-129-(i%3)*21);g.lineTo(x+126,G);g.fill()}
 // Environment-specific silhouettes are decorative only.
