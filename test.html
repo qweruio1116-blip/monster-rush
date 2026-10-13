@@ -16,12 +16,12 @@ const BIOMES=[
  {name:'熱帯雨林',sky:'#74a99d',far:'#2e7464',ground:'#285c44',edge:'#7ebc76',enemy:'tracker',weather:'rain'},
  {name:'湿地',sky:'#8daeb1',far:'#5e8c82',ground:'#4d7165',edge:'#91ad85',enemy:'diver',weather:'rain'}
 ];
-const BIOME_SECONDS=75, DAY_SECONDS=600;
+const BIOME_SECONDS=60, DAY_SECONDS=600;
 let travelSeconds=0, biomeIndex=0, stageNumber=1, stageFlash=0;
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 function mixColor(a,b,t){t=clamp(t);const n=h=>parseInt(h,16);const aa=a.slice(1),bb=b.slice(1);return '#'+[0,2,4].map(i=>Math.round(n(aa.slice(i,i+2))*(1-t)+n(bb.slice(i,i+2))*t).toString(16).padStart(2,'0')).join('')}
 function lightLevel(){const t=travelSeconds%DAY_SECONDS;if(t<240)return 1;if(t<300)return 1-(t-240)/60;if(t<540)return 0;return (t-540)/60}
-function updateBiome(){const n=Math.floor(travelSeconds/BIOME_SECONDS);if(n!==stageNumber-1){stageNumber=n+1;biomeIndex=n%BIOMES.length;stageFlash=150;el('biomeLabel').textContent=BIOMES[biomeIndex].name}}
+function updateBiome(){const n=Math.floor(travelSeconds/BIOME_SECONDS);if(n!==stageNumber-1){stageNumber=n+1;let next;do{next=1+Math.floor(Math.random()*(BIOMES.length-1))}while(next===biomeIndex);biomeIndex=next;stageFlash=150;el('biomeLabel').textContent=BIOMES[biomeIndex].name}}
 // Weather is visual-only; select climate-appropriate effects deterministically per stage.
 const WEATHER_OPTIONS={
  '原初の地':[['clear',5],['rain',2],['cloud',3]],
