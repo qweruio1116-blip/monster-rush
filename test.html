@@ -163,7 +163,7 @@ function openRules(e){if(e)e.stopPropagation();if(running){rulesPaused=true;canc
 </script><script>
 /* MONSTER RUSH: check latest deployed HTML on app launch/resume. */
 (()=>{
-const CURRENT_SHA256='2255dae2e0065a4c9226659ea5f2212d57d235c2647c6cb64710134a930d7b67';
+const CURRENT_SHA256='b741707ca244f0148f701d1d5dcbd9ab39fcb2cdfb20394e0993cb87c4fcca8d';
 let checking=false,lastCheck=0;
 async function checkForUpdate(){
  if(checking||!navigator.onLine||Date.now()-lastCheck<15000)return;
